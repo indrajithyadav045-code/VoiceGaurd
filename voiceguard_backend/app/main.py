@@ -1,5 +1,6 @@
 import io
 import asyncio
+import torch  # Fix: was missing — torch.mean() and torch.from_numpy() used below
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -15,7 +16,7 @@ from app.services.speaker import speaker_service
 from app.services.risk_engine import risk_engine
 from app.services.alert_service import alert_service
 from app.schemas.requests import ContextRequest
-from app.schemas.responses import AnalysisResponse, HealthResponse
+from app.schemas.responses import AnalysisResponse, HealthResponse, ForensicReport  # Fix: ForensicReport was used in analyze_file but not imported
 
 app = FastAPI(title="VoiceGuard Production Backend", version=settings.APP_VERSION)
 
