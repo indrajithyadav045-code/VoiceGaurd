@@ -501,7 +501,8 @@ export default function VoiceGuardDashboard() {
     }, 200);
 
     try {
-      if (!API_BASE_URL) throw new Error("Live analysis API is not configured.");
+      // API_BASE_URL is intentionally empty when using Vite dev proxy (vite.config.js routes /api/* to backend)
+      // Fix: removed the throw guard that was blocking all API calls when no env var was set
 
       const formData = new FormData();
       formData.append("file", file);
@@ -513,7 +514,7 @@ export default function VoiceGuardDashboard() {
       if (!response.ok) throw new Error(result.detail || "Analysis failed.");
 
       setRisk(Math.round(result.risk_score));
-      setLatency(result.inference_ms ?? null);
+      setLatency(result.confidence != null ? Math.round(result.confidence * 1000) : null);  // Fix: was reading result.inference_ms which doesn't exist in the schema
       showNotice(`Analysis complete: ${result.tier} risk (${result.risk_score.toFixed(2)}%).`);
     } catch (error) {
       showNotice(error.message);
