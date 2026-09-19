@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm ci --prefix voiceguard_backend/frontend && npm run build --prefix voiceguard_backend/frontend",
+  "outputDirectory": "voiceguard_backend/frontend/dist",
+  "framework": "vite"
+}

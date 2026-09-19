@@ -4,6 +4,7 @@ venv/
 **/venv/
 **/.venv/
 .vscode/
+.vercel/
 
 # Python generated files
 __pycache__/
