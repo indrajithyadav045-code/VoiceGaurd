@@ -491,9 +491,12 @@ const LIVE_THREATS = [
 ];
 
 export default function VoiceGuardDashboard() {
-  // Fixed dummy prediction score for demo — does not animate
-  const [risk, setRisk] = useState(78);
-  const [latency, setLatency] = useState(154);
+  // Random score between 56-92 on initial load
+  const randScore = () => Math.floor(Math.random() * (92 - 56 + 1)) + 56;
+  const randLatency = () => Math.floor(Math.random() * (170 - 130 + 1)) + 130;
+
+  const [risk, setRisk] = useState(() => randScore());
+  const [latency, setLatency] = useState(() => randLatency());
   const [entries, setEntries] = useState(THREAT_TEMPLATES);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -529,25 +532,53 @@ export default function VoiceGuardDashboard() {
     setIsUploading(true);
     setUploadProgress(0);
 
-    /* Simulate upload + analysis progress for demo */
+    // Progress bar animation
     let currentProgress = 0;
     const interval = setInterval(() => {
-      currentProgress = Math.min(currentProgress + 8, 100);
+      currentProgress = Math.min(currentProgress + 8, 90);
       setUploadProgress(currentProgress);
-      if (currentProgress === 100) clearInterval(interval);
     }, 150);
 
-    /* After 2s show a "high risk" result for demo impact */
-    setTimeout(() => {
-      setRisk(83);
-      setLatency(158);
-      setIsUploading(false);
-      showNotice("Analysis complete: CRITICAL risk (83.00%). Kill-switch triggered.");
+    try {
+      // Call the real backend model to analyze voice frequencies
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch(`${API_BASE_URL}/api/v1/analyze-file`, {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.detail || "Analysis failed.");
+
+      const score = Math.round(result.risk_score);
+      setRisk(score);
+      setLatency(result.inference_ms ?? randLatency());
+      showNotice(`Analysis complete: ${result.tier} risk (${result.risk_score.toFixed(2)}%).`);
+      setEntries((prev) => [
+        {
+          id: Date.now(),
+          time: formatClock(new Date()),
+          text: `Model Prediction — ${file.name} — P_synth: ${result.p_synth?.toFixed(3)} | ${result.attribution}`,
+          tag: score >= 75 ? "HIGH RISK" : score >= 40 ? "WARNING" : "CLEAR",
+          level: score >= 75 ? "high" : score >= 40 ? "medium" : "clear",
+        },
+        ...prev.slice(0, 9),
+      ]);
+    } catch (err) {
+      // Backend not running — use a random score in 56-92 range as fallback
+      const fallback = randScore();
+      setRisk(fallback);
+      setLatency(randLatency());
+      showNotice(`Backend unreachable — showing random demo score: ${fallback}`);
       setEntries((prev) => [
         { id: Date.now(), time: formatClock(new Date()), text: `Voice Cloning Detected — ${file.name}`, tag: "HIGH RISK", level: "high" },
         ...prev.slice(0, 9),
       ]);
-    }, 2200);
+    } finally {
+      clearInterval(interval);
+      setUploadProgress(100);
+      setIsUploading(false);
+    }
   };
 
   return (
