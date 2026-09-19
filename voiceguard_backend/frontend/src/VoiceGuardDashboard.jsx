@@ -478,18 +478,8 @@ function ForensicsFooter() {
  * DEMO MODE — animated dummy data for video recording
  * ------------------------------------------------------------------ */
 
-const DEMO_SEQUENCE = [
-  { score: 56, latency: 143 },
-  { score: 61, latency: 138 },
-  { score: 67, latency: 155 },
-  { score: 72, latency: 149 },
-  { score: 78, latency: 162 },
-  { score: 83, latency: 158 },
-  { score: 88, latency: 144 },
-  { score: 92, latency: 151 },
-  { score: 85, latency: 147 },
-  { score: 79, latency: 139 },
-];
+const DEMO_SEQUENCE = null; // unused — static prediction mode
+
 
 const LIVE_THREATS = [
   { text: "Synthetic Vocoder Signature — ElevenLabs Neural pattern detected", tag: "HIGH RISK", level: "high" },
@@ -501,8 +491,9 @@ const LIVE_THREATS = [
 ];
 
 export default function VoiceGuardDashboard() {
-  const [risk, setRisk] = useState(12);
-  const [latency, setLatency] = useState(143);
+  // Fixed dummy prediction score for demo — does not animate
+  const [risk, setRisk] = useState(78);
+  const [latency, setLatency] = useState(154);
   const [entries, setEntries] = useState(THREAT_TEMPLATES);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -516,18 +507,7 @@ export default function VoiceGuardDashboard() {
     setTimeout(() => setNotice(null), 3500);
   };
 
-  /* ---- DEMO: animate risk score every 1.8s ---- */
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const step = DEMO_SEQUENCE[demoStep.current % DEMO_SEQUENCE.length];
-      setRisk(step.score);
-      setLatency(step.latency);
-      demoStep.current += 1;
-    }, 1800);
-    return () => clearInterval(timer);
-  }, []);
-
-  /* ---- DEMO: add a new threat log entry every 4s ---- */
+  /* ---- DEMO: threat log updates every 4s (keeps the screen lively) ---- */
   useEffect(() => {
     const timer = setInterval(() => {
       const threat = LIVE_THREATS[threatIdx.current % LIVE_THREATS.length];
