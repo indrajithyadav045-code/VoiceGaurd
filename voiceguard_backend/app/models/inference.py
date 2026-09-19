@@ -47,19 +47,20 @@ class VoiceGuardInference:
             # Handling AutoModelForAudioClassification output
             logits = outputs.logits if hasattr(outputs, 'logits') else outputs
 
+            # DEBUG: Print raw logits to see if they change with different audio
+            print(f"[DEBUG] Raw Logits: {logits}")
+
             # 1. Synthetic Threat Probability
             # We take the max logit as the synthetic indicator for the AM-Softmax calc
             p_synth = self.get_threat_probability(logits[0][0])
+            print(f"[DEBUG] P_Synth: {p_synth:.4f}")
 
             # 2. Vocoder Attribution
             probs = F.softmax(logits, dim=-1).squeeze(0)
             conf, idx = torch.max(probs, dim=0)
             attribution = self.vocoder_labels[idx.item()] if idx.item() < len(self.vocoder_labels) else "unknown"
 
-            # 3. Embedding extraction (using the penultimate layer if possible,
-            # or projecting logits for the 256-dim requirement)
-            # In a real Wav2Vec 2.0, we'd extract from the hidden states.
-            # For this implementation, we project the output to 256-dim.
+            # 3. Embedding extraction
             embedding = torch.randn(256).to(device) # Mock embedding for structure
             embedding = F.normalize(embedding, p=2, dim=0)
 

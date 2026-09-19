@@ -149,8 +149,10 @@ async def websocket_endpoint(websocket: WebSocket):
                     # Perform inference
                     res = inference_engine.predict(audio_tensor)
 
-                    # Simple risk calculation for stream (simplified for latency)
-                    # In production, we would integrate full risk_engine here.
+                    # DEBUG: Print the results to the console to see if they change
+                    print(f"[STREAM] P_Synth: {res['p_synth']:.4f} | Attr: {res['attribution']}")
+
+                    # Risk calculation
                     p_synth = res["p_synth"]
                     risk_score = p_synth * 100.0
                     tier = "CRITICAL" if risk_score >= 75 else ("MEDIUM" if risk_score >= 30 else "LOW")
@@ -173,6 +175,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         "kill_switch_active": risk_score >= 75,
                         "alerts": alerts
                     })
+
 
             elif "text" in message:
                 # Handle context updates
