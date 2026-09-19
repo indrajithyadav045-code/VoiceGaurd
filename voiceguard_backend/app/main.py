@@ -1,5 +1,6 @@
 import io
 import asyncio
+import time
 import torch  # Fix: was missing — torch.mean() and torch.from_numpy() used below
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -80,8 +81,10 @@ async def analyze_file(
         # Run inference on original vs simulated PSTN
         pstn_audio = codec_engine.apply_pstn_pipeline(audio_tensor)
 
+        t_start = time.time()
         res_orig = inference_engine.predict(audio_tensor)
         res_pstn = inference_engine.predict(pstn_audio)
+        inference_ms = round((time.time() - t_start) * 1000, 1)
 
         # We use the more conservative (higher) threat score for the final risk
         final_p_synth = max(res_orig["p_synth"], res_pstn["p_synth"])
@@ -121,7 +124,8 @@ async def analyze_file(
             tier=risk_data["tier"],
             kill_switch_active=risk_data["kill_switch_active"],
             alerts=alert_data["dispatched_alerts"],
-            event_id=alert_data["event_id"]
+            event_id=alert_data["event_id"],
+            inference_ms=inference_ms
         )
 
     except Exception as e:

@@ -514,7 +514,7 @@ export default function VoiceGuardDashboard() {
       if (!response.ok) throw new Error(result.detail || "Analysis failed.");
 
       setRisk(Math.round(result.risk_score));
-      setLatency(result.confidence != null ? Math.round(result.confidence * 1000) : null);  // Fix: was reading result.inference_ms which doesn't exist in the schema
+      setLatency(result.inference_ms ?? null);
       showNotice(`Analysis complete: ${result.tier} risk (${result.risk_score.toFixed(2)}%).`);
     } catch (error) {
       showNotice(error.message);
