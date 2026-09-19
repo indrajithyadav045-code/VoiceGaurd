@@ -1,7 +1,9 @@
 [build]
-  publish = "frontend"
+  base = "voiceguard_backend/frontend"
+  command = "npm run build"
+  publish = "dist"
 
-# The frontend is a single static page. Serve it for direct links as well.
+# The React dashboard is a single-page application. Serve it for direct links.
 [[redirects]]
   from = "/*"
   to = "/index.html"
