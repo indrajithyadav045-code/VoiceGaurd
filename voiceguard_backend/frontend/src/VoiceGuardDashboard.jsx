@@ -62,6 +62,8 @@ const TONE = {
   emerald: { text: "text-emerald-800", stroke: "#047857" },
 };
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+
 /* ------------------------------------------------------------------ *
  * Reusable Components
  * ------------------------------------------------------------------ */
@@ -114,7 +116,7 @@ function HeaderBar({ latency }) {
 
         <span className="flex items-center gap-1.5 rounded-full border border-stone-300 bg-[#efece4] px-3 py-1.5 text-[11px] font-bold text-stone-800 shadow-sm">
           <Zap className="h-3.5 w-3.5 text-stone-700" aria-hidden />
-          LATENCY: <span className="tabular-nums font-black text-stone-900">{latency}ms</span>
+          LATENCY: <span className="tabular-nums font-black text-stone-900">{latency === null ? "—" : `${latency}ms`}</span>
         </span>
 
         <span className="flex items-center gap-1.5 rounded-full border border-stone-300 bg-[#efece4] px-3 py-1.5 text-[11px] font-bold text-stone-800 shadow-sm">
@@ -313,6 +315,18 @@ function RiskGauge({ score, tone }) {
 }
 
 function RiskAnalysis({ score }) {
+  if (score === null) {
+    return (
+      <Panel title="REAL-TIME RISK ANALYSIS" icon={Gauge}>
+        <div className="flex min-h-52 flex-col items-center justify-center rounded-lg border border-dashed border-stone-300 bg-[#efece4] px-4 py-6 text-center shadow-sm">
+          <Gauge className="h-9 w-9 text-stone-500" aria-hidden />
+          <p className="mt-3 text-sm font-black text-stone-900">AWAITING ANALYSIS</p>
+          <p className="mt-1 max-w-xs text-xs font-medium leading-relaxed text-stone-600">Upload an audio file to calculate a live risk score.</p>
+        </div>
+      </Panel>
+    );
+  }
+
   const band = riskBand(score);
   const tone = TONE[band.tone];
 
@@ -461,11 +475,11 @@ function ForensicsFooter() {
  * ------------------------------------------------------------------ */
 
 export default function VoiceGuardDashboard() {
-  const [risk, setRisk] = useState(92);
-  const [latency, setLatency] = useState(19);
+  const [risk, setRisk] = useState(null);
+  const [latency, setLatency] = useState(null);
   const [entries, setEntries] = useState(THREAT_TEMPLATES);
-  const [uploadedFile, setUploadedFile] = useState({ name: "client_audio_recording_012345_anjali.wav", size: 47185920 });
-  const [uploadProgress, setUploadProgress] = useState(100);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [notice, setNotice] = useState(null);
 
@@ -474,21 +488,40 @@ export default function VoiceGuardDashboard() {
     setTimeout(() => setNotice(null), 3500);
   };
 
-  const handleFileSelected = (file) => {
+  const handleFileSelected = async (file) => {
     setUploadedFile(file);
     setIsUploading(true);
     setUploadProgress(0);
+    setRisk(null);
 
     let currentProgress = 0;
     const interval = setInterval(() => {
-      currentProgress += 20;
+      currentProgress = Math.min(currentProgress + 10, 90);
       setUploadProgress(currentProgress);
-      if (currentProgress >= 100) {
-        clearInterval(interval);
-        setIsUploading(false);
-        showNotice(`File "${file.name}" uploaded successfully for offline analysis.`);
-      }
     }, 200);
+
+    try {
+      if (!API_BASE_URL) throw new Error("Live analysis API is not configured.");
+
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch(`${API_BASE_URL}/api/v1/analyze-file`, {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.detail || "Analysis failed.");
+
+      setRisk(Math.round(result.risk_score));
+      setLatency(result.inference_ms ?? null);
+      showNotice(`Analysis complete: ${result.tier} risk (${result.risk_score.toFixed(2)}%).`);
+    } catch (error) {
+      showNotice(error.message);
+    } finally {
+      clearInterval(interval);
+      setUploadProgress(100);
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -496,9 +529,9 @@ export default function VoiceGuardDashboard() {
       <HeaderBar latency={latency} />
 
       <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-5 sm:px-6">
-        <div className="mb-4 flex items-start gap-3 rounded-lg border border-stone-300 bg-[#8b263e] px-4 py-3 text-white shadow-sm">
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-stone-300 bg-stone-800 px-4 py-3 text-white shadow-sm">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-white" aria-hidden />
-          <p className="text-xs font-black tracking-wide">HIGH-RISK INDICATORS: Verify Client Immediately.</p>
+          <p className="text-xs font-black tracking-wide">ANALYSIS STATUS: Upload audio to calculate a live risk score.</p>
         </div>
 
         {notice && (

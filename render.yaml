@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: voiceguard-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerContext: ./voiceguard_backend
+    dockerfilePath: ./voiceguard_backend/Dockerfile
+    healthCheckPath: /health

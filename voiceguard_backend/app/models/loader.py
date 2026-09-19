@@ -30,7 +30,7 @@ class VoiceGuardLoader:
         """
         Secondary fallback: Try to load from local weights directory.
         """
-        local_weights_path = Path("D:/voiceguard-website/voiceguard_backend/app/models/weights/voiceguard.safetensors")
+        local_weights_path = Path(__file__).parent / "weights" / "voiceguard.safetensors"
 
         if local_weights_path.exists():
             try:
