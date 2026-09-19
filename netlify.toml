@@ -1,0 +1,8 @@
+[build]
+  publish = "frontend"
+
+# The frontend is a single static page. Serve it for direct links as well.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
