@@ -1,0 +1,20 @@
+# Local development environments and editor settings
+venv/
+.venv/
+**/venv/
+**/.venv/
+.vscode/
+
+# Python generated files
+__pycache__/
+*.py[cod]
+
+# JavaScript dependencies and build outputs
+node_modules/
+dist/
+*.log
+
+# Local environment configuration
+.env
+.env.*
+!.env.example

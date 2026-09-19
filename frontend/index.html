@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoiceGuard — Deepfake Voice Detection</title>
+<link rel="stylesheet" href="/static/styles.css" /></head><body>
+<header class="nav"><div class="nav-inner">
+<div class="brand"><span class="shield">\uD83D\uDEE1\uFE0F</span> VoiceGuard</div>
+<nav class="links"><a href="#analyzer">Analyzer</a><a href="#live">Live Check</a><a href="#how">How it works</a><a href="#history">History</a></nav>
+<div id="healthBadge" class="health" title="Backend status">\u25CF connecting...</div></div></header>
+<section class="hero"><h1>Real-time <span class="grad">deepfake voice</span> detection</h1>
+<p class="sub">Drop any call recording or speak into your mic. Our trained RawNet INT8 model scores it in under a second.</p>
+<div class="hero-cta"><a class="btn primary" href="#analyzer">Analyze audio</a><a class="btn ghost" href="#live">\uD83C\uDFA9 Live mic check</a></div>
+<div class="stats"><div class="stat"><b>5</b><span>vocoder classes</span></div><div class="stat"><b>1.5s</b><span>analysis window</span></div><div class="stat"><b>INT8</b><span>quantized model</span></div><div class="stat"><b id="statLatency">\u2014</b><span>last inference</span></div></div></section>
+<main><section id="analyzer" class="card"><h2>\uD83D\uDD0D Audio analyzer</h2>
+<p class="hint">WAV, MP3, OGG, WebM, M4A \u2014 decoded in your browser, analyzed at 16\u2009kHz mono.</p>
+<div id="dropzone" class="dropzone"><div class="dz-icon">\uD83D\uDCC1</div><p><b>Drag & drop</b> an audio file here, or</p>
+<label class="btn primary small">Choose file<input id="fileInput" type="file" accept="audio/*" hidden /></label>
+<audio id="player" controls class="player" hidden></audio></div>
+<div id="analyzing" class="analyzing" hidden><div class="spinner"></div><span>Analyzing with VoiceGuard model...</span></div>
+<div id="result" class="result" hidden><div class="verdict" id="verdict">\u2014</div><div class="gauges">
+<div class="gauge"><div class="gauge-label">Threat score</div><div class="bar"><div id="threatBar" class="fill threat"></div></div><div class="gauge-val" id="threatVal">\u2014</div></div>
+<div class="gauge"><div class="gauge-label">Authenticity</div><div class="bar"><div id="authBar" class="fill auth"></div></div><div class="gauge-val" id="authVal">\u2014</div></div></div>
+<div class="meta-row"><span id="metaTop">\u2014</span><span id="metaMs">\u2014</span></div>
+<h3>Class probabilities</h3><div id="probBars" class="prob-bars"></div></div></section>
+<section id="live" class="card"><h2>\uD83C\uDFA9 Live mic check</h2>
+<p class="hint">Records <b id="liveSecs">4 seconds</b> from your microphone and scores it instantly. Nothing leaves your machine except the PCM sent to this server.</p>
+<div class="live-row"><button id="recBtn" class="btn danger" disabled>\u25CF Record 4s & analyze</button>
+<div id="recState" class="rec-state">waiting for model...</div></div>
+<div class="live-meter"><div id="liveMeter" class="fill live"></div></div></section>
+<section id="how" class="card"><h2>\u2699\uFE0F How it works</h2><div class="steps">
+<div class="step"><b>1. Capture</b><span>Mic or file \u2192 resampled to 16 kHz mono in-browser.</span></div>
+<div class="step"><b>2. Window</b><span>Last 1.5 s (24,000 samples) fed to the network.</span></div>
+<div class="step"><b>3. Classify</b><span>VoiceGuardRawNet (SincConv + ResNet + BiGRU, INT8) outputs 5 vocoder posteriors.</span></div>
+<div class="step"><b>4. Decide</b><span>threat = 100 \u00D7 (1 \u2212 P<sub>gt</sub>). \u2265 75 \u2192 synthetic, terminate call.</span></div></div>
+<div id="modelInfo" class="model-info">Loading model info...</div></section>
+<section id="history" class="card"><div class="row-between"><h2>\uD83D\uDCDC Analysis history</h2><button id="clearHist" class="btn ghost small">Clear</button></div>
+<table class="hist"><thead><tr><th>Time</th><th>Source</th><th>Verdict</th><th>Threat</th><th>Top class</th><th>Latency</th></tr></thead><tbody id="histBody"><tr><td colspan="6" class="dim">No analyses yet.</td></tr></tbody></table></section></main>
+<footer><span>VoiceGuard v3.0 \u2014 trained RawNet INT8 \u00B7 runs on CPU \u00B7 your audio stays local</span></footer>
+<script src="/static/app.js"></script></body></html>
