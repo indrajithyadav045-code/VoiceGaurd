@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   Activity,
   AlertOctagon,
@@ -474,55 +474,100 @@ function ForensicsFooter() {
  * Root Export
  * ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ *
+ * DEMO MODE — animated dummy data for video recording
+ * ------------------------------------------------------------------ */
+
+const DEMO_SEQUENCE = [
+  { score: 56, latency: 143 },
+  { score: 61, latency: 138 },
+  { score: 67, latency: 155 },
+  { score: 72, latency: 149 },
+  { score: 78, latency: 162 },
+  { score: 83, latency: 158 },
+  { score: 88, latency: 144 },
+  { score: 92, latency: 151 },
+  { score: 85, latency: 147 },
+  { score: 79, latency: 139 },
+];
+
+const LIVE_THREATS = [
+  { text: "Synthetic Vocoder Signature — ElevenLabs Neural pattern detected", tag: "HIGH RISK", level: "high" },
+  { text: "Spectral Flatness Anomaly — Over-smoothing at 3.2–5.6kHz band", tag: "HIGH RISK", level: "high" },
+  { text: "Speaker Embedding Drift — Cosine similarity dropped to 0.31", tag: "WARNING", level: "medium" },
+  { text: "PSTN Resilience Delta — Score diverged 18% post-codec simulation", tag: "WARNING", level: "medium" },
+  { text: "Kill-Switch Threshold Crossed — Transaction freeze initiated", tag: "HIGH RISK", level: "high" },
+  { text: "AM-Softmax Score: P_synth = 0.847 — Above 0.75 cutoff", tag: "HIGH RISK", level: "high" },
+];
+
 export default function VoiceGuardDashboard() {
-  const [risk, setRisk] = useState(null);
-  const [latency, setLatency] = useState(null);
+  const [risk, setRisk] = useState(12);
+  const [latency, setLatency] = useState(143);
   const [entries, setEntries] = useState(THREAT_TEMPLATES);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [notice, setNotice] = useState(null);
+  const demoStep = useRef(0);
+  const threatIdx = useRef(0);
 
   const showNotice = (msg) => {
     setNotice(msg);
     setTimeout(() => setNotice(null), 3500);
   };
 
+  /* ---- DEMO: animate risk score every 1.8s ---- */
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const step = DEMO_SEQUENCE[demoStep.current % DEMO_SEQUENCE.length];
+      setRisk(step.score);
+      setLatency(step.latency);
+      demoStep.current += 1;
+    }, 1800);
+    return () => clearInterval(timer);
+  }, []);
+
+  /* ---- DEMO: add a new threat log entry every 4s ---- */
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const threat = LIVE_THREATS[threatIdx.current % LIVE_THREATS.length];
+      threatIdx.current += 1;
+      setEntries((prev) => [
+        {
+          id: Date.now(),
+          time: formatClock(new Date()),
+          ...threat,
+        },
+        ...prev.slice(0, 9),
+      ]);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
   const handleFileSelected = async (file) => {
     setUploadedFile(file);
     setIsUploading(true);
     setUploadProgress(0);
-    setRisk(null);
 
+    /* Simulate upload + analysis progress for demo */
     let currentProgress = 0;
     const interval = setInterval(() => {
-      currentProgress = Math.min(currentProgress + 10, 90);
+      currentProgress = Math.min(currentProgress + 8, 100);
       setUploadProgress(currentProgress);
-    }, 200);
+      if (currentProgress === 100) clearInterval(interval);
+    }, 150);
 
-    try {
-      // API_BASE_URL is intentionally empty when using Vite dev proxy (vite.config.js routes /api/* to backend)
-      // Fix: removed the throw guard that was blocking all API calls when no env var was set
-
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await fetch(`${API_BASE_URL}/api/v1/analyze-file`, {
-        method: "POST",
-        body: formData,
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.detail || "Analysis failed.");
-
-      setRisk(Math.round(result.risk_score));
-      setLatency(result.inference_ms ?? null);
-      showNotice(`Analysis complete: ${result.tier} risk (${result.risk_score.toFixed(2)}%).`);
-    } catch (error) {
-      showNotice(error.message);
-    } finally {
-      clearInterval(interval);
-      setUploadProgress(100);
+    /* After 2s show a "high risk" result for demo impact */
+    setTimeout(() => {
+      setRisk(83);
+      setLatency(158);
       setIsUploading(false);
-    }
+      showNotice("Analysis complete: CRITICAL risk (83.00%). Kill-switch triggered.");
+      setEntries((prev) => [
+        { id: Date.now(), time: formatClock(new Date()), text: `Voice Cloning Detected — ${file.name}`, tag: "HIGH RISK", level: "high" },
+        ...prev.slice(0, 9),
+      ]);
+    }, 2200);
   };
 
   return (
@@ -532,7 +577,9 @@ export default function VoiceGuardDashboard() {
       <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-5 sm:px-6">
         <div className="mb-4 flex items-start gap-3 rounded-lg border border-stone-300 bg-stone-800 px-4 py-3 text-white shadow-sm">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-white" aria-hidden />
-          <p className="text-xs font-black tracking-wide">ANALYSIS STATUS: Upload audio to calculate a live risk score.</p>
+          <p className="text-xs font-black tracking-wide">
+            LIVE MONITORING ACTIVE — Real-time voice cloning detection running on all channels.
+          </p>
         </div>
 
         {notice && (
@@ -560,9 +607,9 @@ export default function VoiceGuardDashboard() {
           <div className="space-y-5 lg:col-span-3">
             <DefenseLayers />
             <AgentActions
-              onStepUp={() => showNotice("Step-up verification challenge sent.")}
-              onBlock={() => showNotice("Call marked blocked and recorded in forensics log.")}
-              onEscalate={() => showNotice("Session escalated to forensics team.")}
+              onStepUp={() => showNotice("Step-up verification challenge sent to caller.")}
+              onBlock={() => showNotice("Call blocked. Incident logged in forensics." )}
+              onEscalate={() => showNotice("Session escalated to Fraud Ops team.")}
             />
           </div>
         </div>
