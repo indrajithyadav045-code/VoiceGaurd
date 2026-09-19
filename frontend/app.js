@@ -60,13 +60,13 @@ let recording=false;$("recBtn").addEventListener("click",async()=>{
   st.textContent="decoding...";const blob=new Blob(chunks,{type:rec.mimeType||"audio/webm"});
   try{const pcm=await decodeTo16kMono(blob);st.textContent="analyzing...";await runAnalysis(pcm,"mic-live-4s");st.textContent="done \u2713";}
   catch(e){st.textContent="failed";alert("Mic failed: "+e.message);}
-  finally{st.className="rec-state";$("recBtn").disabled=false;recording=false;setTimeout(()=>{st.textContent="idle";m.style.width="0%";},4000);});
+  finally{st.className="rec-state";$("recBtn").disabled=false;recording=false;setTimeout(()=>{st.textContent="idle";m.style.width="0%";},4000);}});
 async function loadHistory(){
   try{const r=await fetch(`${API}/api/history?limit=20`);const h=await r.json();const b=$("histBody");b.innerHTML="";
     if(!h.entries.length){b.innerHTML=`<tr><td colspan="6" class="dim">No analyses yet.</td></tr>`;return;}
     for(const e of h.entries){const tr=document.createElement("tr");
       tr.innerHTML=`<td class="mono">${e.time}</td><td>${escapeHtml(e.label||e.source)}</td><td><span class="pill ${e.is_synthetic?"fake":"real"}">${e.is_synthetic?"SYNTHETIC":"BONAFIDE"}</span></td><td class="mono">${e.threat_score}%</td><td class="mono">${e.top_class}</td><td class="mono">${e.inference_ms} ms</td>`;b.appendChild(tr);}}
   catch{}}
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&","<":"<",">":">",'"':""","'":"'"}[c]));}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 $("clearHist").addEventListener("click",async()=>{await fetch(`${API}/api/history`,{method:"DELETE"}).catch(()=>{});loadHistory();});
 $("liveSecs").textContent=`${LIVE_SECONDS} seconds`;refreshHealth();setInterval(refreshHealth,10000);loadModelInfo();loadHistory();
