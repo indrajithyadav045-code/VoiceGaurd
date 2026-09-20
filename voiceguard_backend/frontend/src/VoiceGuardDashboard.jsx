@@ -213,17 +213,12 @@ function AudioUploadPanel({ uploadedFile, uploadProgress, isUploading, onFileSel
       </div>
 
       {/* Upload Progress Bar */}
-      {(isUploading || uploadProgress > 0) && (
+      {/* Show progress bar ONLY while uploading — hides automatically when done */}
+      {isUploading && (
         <div className="mt-4 rounded-lg border border-stone-300 bg-[#efece4] p-3 shadow-sm">
           <div className="flex items-center justify-between text-xs font-bold text-stone-900">
-            <span>UPLOAD IN PROGRESS... {uploadProgress}%</span>
-            {uploadProgress === 100 ? (
-              <span className="flex items-center gap-1 text-emerald-800">
-                <CheckCircle2 className="h-3.5 w-3.5" /> UPLOAD COMPLETE
-              </span>
-            ) : (
-              <span className="text-stone-500 font-normal">Processing chunks</span>
-            )}
+            <span>ANALYSING VOICE FREQUENCIES... {uploadProgress}%</span>
+            <span className="text-stone-500 font-normal">Processing chunks</span>
           </div>
           <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-stone-300">
             <div
@@ -576,8 +571,8 @@ export default function VoiceGuardDashboard() {
       ]);
     } finally {
       clearInterval(interval);
-      setUploadProgress(100);
       setIsUploading(false);
+      setUploadProgress(0); // reset so bar fully disappears
     }
   };
 
